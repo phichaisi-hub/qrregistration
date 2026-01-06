@@ -66,4 +66,5 @@ app.post('/scan', async (req, res) => {
         res.status(500).json({ status: "error", message: "ระบบฐานข้อมูลขัดข้อง" });
     }
 });
-app.listen(3000, () => console.log('Scanner App running on port 3000'));
+
+app.listen(3001, () => console.log('Scanner App running on port 3001'));

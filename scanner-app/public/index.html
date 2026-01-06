@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Scanner - Event Attendance</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f0f2f5; margin: 0; padding: 20px; }
+        #reader { width: 100%; max-width: 500px; margin: auto; background: white; padding: 10px; border-radius: 10px; }
+        #result { margin-top: 20px; min-height: 100px; }
+        .status-box { padding: 20px; border-radius: 10px; border: 2px solid transparent; }
+    </style>
+</head>
+<body>
+
+    <h2>เครื่องสแกนเข้างาน (Event Scanner)</h2>
+    
+    <div id="reader"></div>
+
+    <div id="result">
+        <p>กรุณาวาง QR Code ให้ตรงหน้ากล้อง</p>
+    </div>
+       
+     <script>
+    let html5QrcodeScanner;
+
+    // ฟังก์ชันเริ่มต้นกล้อง
+    function startScanner() {
+        if (html5QrcodeScanner) {
+            html5QrcodeScanner.clear(); // ล้างตัวเก่าออกก่อน (ถ้ามี)
+        }
+        html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess);
+    }
+
+    // ฟังก์ชันจัดการผลลัพธ์
+    function handleScanResult(data) {
+        const resultDiv = document.getElementById('result');
+        let html = "";
+        let bgColor = "";
+        let textColor = "";
+
+        if (data.status === "success") {
+            bgColor = "#d4edda"; textColor = "#155724";
+            html = `<h1>✅ ${data.message}</h1>
+                    <p><b>บริษัท:</b> ${data.company_name}</p>
+                    <p><b>เวลา:</b> ${data.scan_time}</p>`;
+        } else if (data.status === "already_scanned") {
+            bgColor = "#fff3cd"; textColor = "#856404";
+            html = `<h1>⚠️ ${data.message}</h1>
+                    <p><b>บริษัท:</b> ${data.company_name}</p>
+                    <p style="color:red;">เข้างานเมื่อ: ${data.attendance_time}</p>`;
+        } else {
+            bgColor = "#f8d7da"; textColor = "#721c24";
+            html = `<h1>❌ ไม่พบข้อมูล</h1><p>ID ไม่ถูกต้องหรือยังไม่ได้ลงทะเบียน</p>`;
+        }
+
+        resultDiv.innerHTML = `
+            <div id="status-box" style="background:${bgColor}; color:${textColor}; padding:20px; border-radius:10px; border:2px solid ${textColor}44">
+                ${html}
+            </div>`;
+    }
+
+    // ฟังก์ชันเมื่อสแกนสำเร็จ
+    function onScanSuccess(decodedText) {
+               // 1. ตัดช่องว่างที่อาจติดมาหน้า-หลังออก
+                const cleanID = decodedText.trim();
+    
+          // 2. พิมพ์ค่าที่สแกนได้ลง Console เพื่อให้เราตรวจสอบได้ (กด F12 ดู)
+           console.log("สแกนได้ค่า:", cleanID);
+
+
+        // 3. หยุดการทำงานของกล้องทันทีที่สแกนติด
+        html5QrcodeScanner.clear().then(() => {
+            
+            // 4. ส่งข้อมูลไป Server
+            fetch('/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ registration_id: cleanID })
+            })
+            .then(res => res.json())
+            .then(data => {
+                // 5. แสดงผลสถานะ (สำเร็จ/ซ้ำ/ไม่พบ)
+                handleScanResult(data);
+
+                // 6. ตั้งเวลานับถอยหลัง 7 วินาที
+                setTimeout(() => {
+                    // --- ล้างสถานะ (Reset UI) ---
+                    document.getElementById('result').innerHTML = "<p>กรุณาวาง QR Code ให้ตรงหน้ากล้อง</p>";
+                    
+                    // --- เริ่มต้นกล้องใหม่ เพื่อรับคนถัดไป ---
+                    startScanner();
+                }, 7000); 
+            })
+            .catch(err => {
+                console.error("Fetch Error:", err);
+                alert("เชื่อมต่อ Server ไม่ได้");
+                startScanner();
+            });
+            
+        }).catch(err => {
+            console.error("Failed to clear scanner:", err);
+        });
+    }
+
+    // เรียกใช้งานกล้องครั้งแรก
+    startScanner();
+</script>  
+    
+</body>
+</html>

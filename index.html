@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Scanner - Entry</title>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        #reader { width: 100%; max-width: 500px; margin: auto; }
+        #result { margin-top: 20px; font-weight: bold; font-size: 1.2em; }
+    </style>
+</head>
+<body>
+    <h1>สแกน QR Code เข้างาน</h1>
+    <div id="reader"></div>
+    <div id="result"></div>
+
+    <script>
+        function onScanSuccess(decodedText) {
+            // สมมติว่า QR Code บรรจุข้อมูลเป็น Registration ID
+            fetch('/api/scan', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reg_id: decodedText })
+            })
+            .then(res => res.json())
+            .then(data => {
+                const resDiv = document.getElementById('result');
+                if(data.success) {
+                    resDiv.style.color = "green";
+                    resDiv.innerHTML = data.message + "<br>เวลา: " + data.time;
+                } else {
+                    resDiv.style.color = "red";
+                    resDiv.innerHTML = data.message;
+                }
+            });
+        }
+
+        let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
+</body>
+</html>

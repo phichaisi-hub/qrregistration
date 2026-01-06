@@ -1,0 +1,7 @@
+FROM wordpress:latest
+
+# ติดตั้ง pdo และ pdo_mysql driver
+RUN docker-php-ext-install pdo pdo_mysql
+
+# Restart Apache เพื่อโหลดค่าใหม่
+RUN apachectl restart

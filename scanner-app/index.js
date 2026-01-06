@@ -1,0 +1,69 @@
+const express = require('express');
+const mysql = require('mysql2');
+const path = require('path');
+const app = express();
+
+const db = mysql.createConnection({
+    host: 'db',
+    user: 'root',
+    password: 'rootpassword',
+    database: 'event_db'
+});
+
+app.use(express.static('public'));
+app.use(express.json());
+
+// API สำหรับยืนยันการสแกน
+app.post('/scan', async (req, res) => {
+    const { registration_id } = req.body;
+
+    try {
+        // 1. ตรวจสอบว่ามี QR นี้ในระบบหรือไม่
+        const [rows] = await db.execute('SELECT * FROM registrations WHERE registration_id = ?', [registration_id]);
+
+        // กรณีที่ 1: หากไม่มีในเรคคอร์ด
+        if (rows.length === 0) {
+            return res.json({ 
+                status: "not_found", 
+                message: "ไม่พบข้อมูลการลงทะเบียน (ID ไม่ถูกต้อง)" 
+            });
+        }
+
+        const user = rows[0];
+
+        // 2. ตรวจสอบว่าเคยสแกนไปหรือยัง (attendance ไม่เป็น NULL)
+        // กรณีที่ 2: สแกนซ้ำ
+        if (user.attendance !== null) {
+            return res.json({ 
+                status: "already_scanned",
+                message: "สแกนเข้างานแล้ว",
+                company_name: user.company_name,
+                attendance_time: user.attendance 
+            });
+        }
+
+        // 3. หากมีตัวตนและยังไม่เคยสแกน ให้บันทึกเวลาสแกนสำเร็จ
+        // กรณีที่ 3: สแกนสำเร็จครั้งแรก
+        const now = new Date();
+        // ปรับเวลาให้เป็นรูปแบบ MySQL (YYYY-MM-DD HH:mm:ss)
+        const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
+
+        await db.execute(
+            'UPDATE registrations SET attendance = ? WHERE registration_id = ?',
+            [formattedDate, registration_id]
+        );
+
+        res.json({
+            status: "success",
+            message: "สแกนสำเร็จ!",
+            company_name: user.company_name,
+            contact_name: user.contact_name,
+            scan_time: formattedDate
+        });
+
+    } catch (error) {
+        console.error("Database Error:", error);
+        res.status(500).json({ status: "error", message: "ระบบฐานข้อมูลขัดข้อง" });
+    }
+});
+app.listen(3000, () => console.log('Scanner App running on port 3000'));

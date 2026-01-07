@@ -7,6 +7,8 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: event_db
+      TZ: Asia/Bangkok
+    command: --default-time-zone="+07:00"
     volumes:
       - db_data:/var/lib/mysql
     networks:

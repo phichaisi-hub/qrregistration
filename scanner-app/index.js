@@ -15,7 +15,7 @@ async function initDatabase() {
             host: 'db',
             user: 'root',
             password: 'rootpassword',
-            database: 'event_db'
+            database: 'event_db',
             charset: 'utf8mb4'
         
         });
@@ -86,5 +86,6 @@ app.post('/scan', async (req, res) => {
 
 // เปลี่ยน port เป็น 3000 หรือ 3001 ตามที่ตั้งค่าใน Docker-compose
 app.listen(3001, () => console.log('Scanner App running on port 3001'));
+
 
 

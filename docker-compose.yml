@@ -29,7 +29,24 @@ services:
       TZ: Asia/Bangkok
     networks:
       - event-net
-
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: event-filemanager
+    restart: always
+    ports:
+      - "8082:80"  # เข้าใช้งานผ่าน http://172.28.20.92:8082
+    volumes:
+      # เชื่อม Folder งานของคุณเข้ากับ File Manager (ปรับ Path ซ้ายมือตามจริง)
+      - ./app:/srv
+      - ./filebrowser.db:/database/filebrowser.db
+      - ./settings.json:/config/settings.json
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Bangkok
+    networks:
+      - event-net
+      
   # 3. WordPress: หน้าลงทะเบียน (รันบนพอร์ต 8080)
   wordpress:
   #image: wordpress:latest

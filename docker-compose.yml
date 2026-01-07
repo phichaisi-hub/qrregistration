@@ -29,23 +29,22 @@ services:
       TZ: Asia/Bangkok
     networks:
       - event-net
-  filebrowser:
+ filebrowser:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
+    user: "0:0"  # เพิ่มบรรทัดนี้เพื่อบังคับให้รันด้วยสิทธิ์ Root (แก้เรื่อง Permission denied)
     ports:
-      - "12246:80"  # เข้าใช้งานผ่าน http://172.28.20.92:12246
-    volumes:
-      # เชื่อม Folder งานของคุณเข้ากับ File Manager (ปรับ Path ซ้ายมือตามจริง)
-      - ./app:/srv
-      - ./filebrowser.db:/database/filebrowser.db
-      - ./settings.json:/config/settings.json
+      - "12246:80"
     environment:
-      - PUID=1000
-      - PGID=1000
       - TZ=Asia/Bangkok
+    volumes:
+      - filebrowser-data:/srv      # ที่เก็บไฟล์งาน
+      - filebrowser-db:/database   # ที่เก็บฐานข้อมูล User
+      - filebrowser-config:/config # ที่เก็บไฟล์ตั้งค่า (settings.json จะถูกสร้างในนี้)
     networks:
       - event-net
+  
    
   
   # 3. WordPress: หน้าลงทะเบียน (รันบนพอร์ต 8080)
@@ -91,5 +90,6 @@ networks:
 volumes:
   db_data:
   filebrowser-data:
+  filebrowser-db:
   filebrowser-config:
       

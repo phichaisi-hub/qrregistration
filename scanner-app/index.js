@@ -1,5 +1,5 @@
 const express = require('express');
-const mysql = require('mysql2');
+const mysql = require('mysql2/promise');
 const path = require('path');
 const app = express();
 
@@ -75,4 +75,5 @@ app.post('/scan', async (req, res) => {
 });
 
 app.listen(3001, () => console.log('Scanner App running on port 3001'));
+
 

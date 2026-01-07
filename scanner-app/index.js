@@ -8,7 +8,10 @@ app.use(express.json());
 
 let db;
 
-// ฟังก์ชันสำหรับเชื่อมต่อฐานข้อมูล
+/**
+ * ฟังก์ชันสำหรับเชื่อมต่อฐานข้อมูล
+ * มีระบบ Retry หากเชื่อมต่อไม่ได้ (ป้องกันแอปพังช่วงที่ DB กำลัง Boot)
+ */
 async function initDatabase() {
     try {
         db = await mysql.createConnection({
@@ -16,42 +19,43 @@ async function initDatabase() {
             user: 'root',
             password: 'rootpassword',
             database: 'event_db',
-            charset: 'utf8mb4'
-        
+            charset: 'utf8mb4' // บังคับรองรับภาษาไทย
         });
-        console.log('Connected to MySQL Database');
+        console.log('✅ Connected to MySQL Database (Thai Language Supported)');
     } catch (error) {
-        console.error('Failed to connect to MySQL:', error);
-        process.exit(1); // ปิดแอปถ้าเชื่อมต่อฐานข้อมูลไม่ได้
+        console.error('❌ Failed to connect to MySQL. Retrying in 5 seconds...', error.message);
+        setTimeout(initDatabase, 5000); 
     }
 }
 
-// เรียกใช้ฟังก์ชันเชื่อมต่อก่อนรัน Server
+// เริ่มต้นเชื่อมต่อฐานข้อมูล
 initDatabase();
 
-// API สำหรับยืนยันการสแกน
+/**
+ * API สำหรับยืนยันการสแกนเข้างาน
+ */
 app.post('/scan', async (req, res) => {
     const { registration_id } = req.body;
 
-    // ตรวจสอบว่า db พร้อมใช้งานหรือไม่
+    // ตรวจสอบความพร้อมของฐานข้อมูล
     if (!db) {
-        return res.status(500).json({ status: "error", message: "Database not connected" });
+        return res.status(500).json({ status: "error", message: "ระบบฐานข้อมูลยังไม่พร้อม กรุณารอสักครู่" });
     }
 
     try {
-        const result = await db.execute(
+        // 1. ตรวจสอบว่า ID นี้มีอยู่ในระบบหรือไม่
+        const [rows] = await db.execute(
             'SELECT * FROM registrations WHERE registration_id = ?', 
             [registration_id]
         );
 
-        if (!Array.isArray(result) || result[0].length === 0) {
+        if (rows.length === 0) {
             return res.json({ status: "not_found", message: "ไม่พบ ID ในระบบ" });
         }
 
-        const rows = result[0];
         const user = rows[0];
 
-        // 1. ตรวจสอบการสแกนซ้ำ
+        // 2. ตรวจสอบว่าเคยสแกนไปหรือยัง (attendance ไม่เป็น NULL)
         if (user.attendance !== null) {
             return res.json({ 
                 status: "already_scanned",
@@ -61,15 +65,16 @@ app.post('/scan', async (req, res) => {
             });
         }
 
-        // 2. บันทึกเวลาสแกนสำเร็จ
+        // 3. บันทึกเวลาสแกนสำเร็จ (บังคับใช้เขตเวลาประเทศไทย GMT+7)
         const now = new Date();
-        const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
+        const formattedDate = now.toLocaleString('sv-SE', { timeZone: 'Asia/Bangkok' });
 
         await db.execute(
             'UPDATE registrations SET attendance = ? WHERE registration_id = ?',
             [formattedDate, registration_id]
         );
 
+        // 4. ส่งผลลัพธ์กลับไปยังหน้าจอ Scanner
         res.json({
             status: "success",
             message: "สแกนสำเร็จ!",
@@ -78,14 +83,20 @@ app.post('/scan', async (req, res) => {
             scan_time: formattedDate
         });
 
+        console.log(`📌 Scanned Successfully: ${registration_id} at ${formattedDate}`);
+
     } catch (error) {
         console.error("Database Error:", error);
         res.status(500).json({ status: "error", message: "ระบบฐานข้อมูลขัดข้อง" });
     }
 });
 
-// เปลี่ยน port เป็น 3000 หรือ 3001 ตามที่ตั้งค่าใน Docker-compose
-app.listen(3001, () => console.log('Scanner App running on port 3001'));
-
-
-
+/**
+ * รัน Server ที่พอร์ต 3001
+ * (อย่าลืมตรวจสอบ Docker Compose ว่า Map พอร์ตตรงกัน)
+ */
+const PORT = 3001;
+app.listen(PORT, () => {
+    console.log(`🚀 Scanner App running on port ${PORT}`);
+    console.log(`🕒 Server Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
+});

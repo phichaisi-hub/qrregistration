@@ -16,6 +16,8 @@ async function initDatabase() {
             user: 'root',
             password: 'rootpassword',
             database: 'event_db'
+            charset: 'utf8mb4_unicode_ci'
+        
         });
         console.log('Connected to MySQL Database');
     } catch (error) {
@@ -84,3 +86,4 @@ app.post('/scan', async (req, res) => {
 
 // เปลี่ยน port เป็น 3000 หรือ 3001 ตามที่ตั้งค่าใน Docker-compose
 app.listen(3001, () => console.log('Scanner App running on port 3001'));
+

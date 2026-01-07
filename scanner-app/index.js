@@ -3,7 +3,7 @@ const mysql = require('mysql2/promise');
 const path = require('path');
 const app = express();
 
-const db = mysql.createConnection({
+const db = await mysql.createConnection({
     host: 'db',
     user: 'root',
     password: 'rootpassword',
@@ -75,5 +75,6 @@ app.post('/scan', async (req, res) => {
 });
 
 app.listen(3001, () => console.log('Scanner App running on port 3001'));
+
 
 

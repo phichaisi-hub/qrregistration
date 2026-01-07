@@ -1,5 +1,8 @@
-services:
-  # 1. Database: MariaDB (ฐานข้อมูลหลัก)
+version: '3.8'
+
+services: # <--- ต้องมีคำนี้และทุกอย่างต้องย่อหน้าเข้ามา 2 spaces
+
+  # 1. Database: MariaDB
   db:
     image: mariadb:10.6
     container_name: event-db
@@ -14,7 +17,7 @@ services:
     networks:
       - event-net
 
-  # 2. phpMyAdmin: สำหรับจัดการฐานข้อมูลผ่าน Browser
+  # 2. phpMyAdmin
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: event-phpmyadmin
@@ -22,38 +25,36 @@ services:
     depends_on:
       - db
     ports:
-      - "8081:80"  # เข้าใช้งานผ่าน http://localhost:8081
+      - "8081:80"
     environment:
       PMA_HOST: db
       MYSQL_ROOT_PASSWORD: rootpassword
       TZ: Asia/Bangkok
     networks:
       - event-net
- filebrowser:
+
+  # 3. File Manager
+  filebrowser:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    user: "0:0"  # เพิ่มบรรทัดนี้เพื่อบังคับให้รันด้วยสิทธิ์ Root (แก้เรื่อง Permission denied)
+    user: "0:0"
     ports:
       - "12246:80"
     environment:
       - TZ=Asia/Bangkok
     volumes:
-      - filebrowser-data:/srv      # ที่เก็บไฟล์งาน
-      - filebrowser-db:/database   # ที่เก็บฐานข้อมูล User
-      - filebrowser-config:/config # ที่เก็บไฟล์ตั้งค่า (settings.json จะถูกสร้างในนี้)
+      - filebrowser-data:/srv
+      - filebrowser-db:/database
+      - filebrowser-config:/config
     networks:
       - event-net
-  
-   
-  
-  # 3. WordPress: หน้าลงทะเบียน (รันบนพอร์ต 8080)
+
+  # 4. WordPress
   wordpress:
-  #image: wordpress:latest
     build: 
       context: .
-      dockerfile: Dockerfile-wp  # สร้างไฟล์แยกสำหรับ WordPress
-    
+      dockerfile: Dockerfile-wp
     container_name: event-wp
     depends_on:
       - db
@@ -64,15 +65,13 @@ services:
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: rootpassword
       WORDPRESS_DB_NAME: event_db
-      # เพิ่มบรรทัดด้านล่างนี้
       PHP_INI_SCAN_DIR: /usr/local/etc/php/conf.d
     volumes:
       - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini 
-
     networks:
       - event-net
 
-# 4. Scanner App: ระบบสแกน QR (Node.js) (รันบนพอร์ต 3000)
+  # 5. Scanner App
   scanner-app:
     build: ./scanner-app
     container_name: event-scanner
@@ -92,4 +91,3 @@ volumes:
   filebrowser-data:
   filebrowser-db:
   filebrowser-config:
-      

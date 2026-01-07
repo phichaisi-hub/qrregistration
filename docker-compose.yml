@@ -46,7 +46,8 @@ services:
       - TZ=Asia/Bangkok
     networks:
       - event-net
-      
+   
+  
   # 3. WordPress: หน้าลงทะเบียน (รันบนพอร์ต 8080)
   wordpress:
   #image: wordpress:latest
@@ -89,3 +90,6 @@ networks:
 
 volumes:
   db_data:
+  filebrowser-data:
+  filebrowser-config:
+      

@@ -3,43 +3,53 @@ const mysql = require('mysql2/promise');
 const path = require('path');
 const app = express();
 
-const db = await mysql.createConnection({
-    host: 'db',
-    user: 'root',
-    password: 'rootpassword',
-    database: 'event_db'
-});
-
 app.use(express.static('public'));
 app.use(express.json());
+
+let db;
+
+// ฟังก์ชันสำหรับเชื่อมต่อฐานข้อมูล
+async function initDatabase() {
+    try {
+        db = await mysql.createConnection({
+            host: 'db',
+            user: 'root',
+            password: 'rootpassword',
+            database: 'event_db'
+        });
+        console.log('Connected to MySQL Database');
+    } catch (error) {
+        console.error('Failed to connect to MySQL:', error);
+        process.exit(1); // ปิดแอปถ้าเชื่อมต่อฐานข้อมูลไม่ได้
+    }
+}
+
+// เรียกใช้ฟังก์ชันเชื่อมต่อก่อนรัน Server
+initDatabase();
 
 // API สำหรับยืนยันการสแกน
 app.post('/scan', async (req, res) => {
     const { registration_id } = req.body;
 
+    // ตรวจสอบว่า db พร้อมใช้งานหรือไม่
+    if (!db) {
+        return res.status(500).json({ status: "error", message: "Database not connected" });
+    }
+
     try {
-        // ตรวจสอบว่า db พร้อมใช้งาน และใส่ await ให้เรียบร้อย
         const result = await db.execute(
             'SELECT * FROM registrations WHERE registration_id = ?', 
             [registration_id]
         );
 
-        // ตรวจสอบว่า result เป็น Array หรือไม่ก่อนจะดึง rows ออกมา
-        if (!Array.isArray(result)) {
-            console.error("Database did not return an array:", result);
-            return res.status(500).json({ message: "Internal Server Error" });
-        }
-
-        const rows = result[0]; // rows คือข้อมูลที่ได้จากฐานข้อมูล
-
-        if (rows.length === 0) {
+        if (!Array.isArray(result) || result[0].length === 0) {
             return res.json({ status: "not_found", message: "ไม่พบ ID ในระบบ" });
         }
 
+        const rows = result[0];
         const user = rows[0];
 
-        // 2. ตรวจสอบว่าเคยสแกนไปหรือยัง (attendance ไม่เป็น NULL)
-        // กรณีที่ 2: สแกนซ้ำ
+        // 1. ตรวจสอบการสแกนซ้ำ
         if (user.attendance !== null) {
             return res.json({ 
                 status: "already_scanned",
@@ -49,10 +59,8 @@ app.post('/scan', async (req, res) => {
             });
         }
 
-        // 3. หากมีตัวตนและยังไม่เคยสแกน ให้บันทึกเวลาสแกนสำเร็จ
-        // กรณีที่ 3: สแกนสำเร็จครั้งแรก
+        // 2. บันทึกเวลาสแกนสำเร็จ
         const now = new Date();
-        // ปรับเวลาให้เป็นรูปแบบ MySQL (YYYY-MM-DD HH:mm:ss)
         const formattedDate = now.toISOString().slice(0, 19).replace('T', ' ');
 
         await db.execute(
@@ -74,7 +82,5 @@ app.post('/scan', async (req, res) => {
     }
 });
 
+// เปลี่ยน port เป็น 3000 หรือ 3001 ตามที่ตั้งค่าใน Docker-compose
 app.listen(3001, () => console.log('Scanner App running on port 3001'));
-
-
-

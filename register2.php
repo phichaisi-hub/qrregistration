@@ -3,9 +3,9 @@ require_once('../wp-load.php');
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
- error_reporting(E_ALL);
+error_reporting(E_ALL);
 
-// ตั้งค่าการเชื่อมต่อฐานข้อมูล (อ้างอิงจาก Docker-compose)
+// ตั้งค่าการเชื่อมต่อฐานข้อมูล
 $host = 'db';
 $db   = 'event_db';
 $user = 'root';
@@ -26,10 +26,12 @@ try {
 
 $message = "";
 
-// เมื่อมีการกดปุ่ม Submit
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // 1. สร้าง Registration ID
     $reg_id = 'REG-' . date('ymd') . '-' . strtoupper(substr(uniqid(), -4));
     
+    // 2. คำสั่ง SQL (ตรวจสอบชื่อคอลัมน์ entry_date/entry_datetime ใน DB ให้ดี)
+    // ผมใช้ entry_date ตามที่คุณเขียนใน FORM ล่าสุด
     $sql = "INSERT INTO registrations 
             (registration_id, company_name, event_name, booth_number, purpose, entry_date, ticket_count, contact_name, email, phone, consent_status, email_sent_status) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Sent')";
@@ -49,37 +51,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $_POST['phone'],
             isset($_POST['consent']) ? 1 : 0
         ]);
-        $message = "<div style='color:green;'>ลงทะเบียนสำเร็จ! ID ของคุณคือ: $reg_id</div>";
-        // ในขั้นตอนนี้คุณสามารถเพิ่มฟังก์ชันส่ง Email ต่อได้เลย       
+
+        // --- หากบันทึกสำเร็จค่อยทำส่วนนี้ ---
+        
+        // เตรียมข้อมูลส่งเมล
         $to      = $_POST['email'];
-    $subject = "QR Code สำหรับเข้างาน";
-    $qr_url  = "https://quickchart.io/qr?text=" . urlencode($reg_id) . "&size=250";
-    
-    $message = "<h3>ลงทะเบียนสำเร็จ</h3>";
-    $message .= "<p>รหัสของคุณคือ: $reg_id</p>";
-    $message .= "<img src='$qr_url'>";
+        $subject = "QR Code สำหรับเข้างานของคุณ";
+        $qr_url  = "https://quickchart.io/qr?text=" . urlencode($reg_id) . "&size=250";
+        
+        $mail_content = "<h3>ลงทะเบียนสำเร็จ</h3>";
+        $mail_content .= "<p>รหัสของคุณคือ: <b>$reg_id</b></p>";
+        $mail_content .= "<img src='$qr_url' alt='QR Code'>";
 
-    $headers = array('Content-Type: text/html; charset=UTF-8');
+        $headers = array('Content-Type: text/html; charset=UTF-8');
 
-    // ส่งเมลผ่านระบบของ WordPress (ซึ่งเสถียรกว่า)
-    wp_mail($to, $subject, $message, $headers);
+        // ส่งเมลผ่าน WordPress
+        $mail_sent = wp_mail($to, $subject, $mail_content, $headers);
 
+        // แสดงข้อความสำเร็จที่หน้าจอ
+        $message = "<div style='color:green; padding:10px; border:1px solid green; margin-bottom:20px;'>";
+        $message .= "✅ ลงทะเบียนสำเร็จ! ID ของคุณคือ: <b>$reg_id</b><br>";
+        $message .= ($mail_sent) ? "📧 ส่ง QR Code ไปที่อีเมลเรียบร้อยแล้ว" : "⚠️ บันทึกข้อมูลแล้ว แต่ส่งอีเมลไม่สำเร็จ (โปรดเช็ค SMTP)";
+        $message .= "</div>";
 
     } catch (Exception $e) {
-        $message = "<div style='color:red;'>เกิดข้อผิดพลาด: " . $e->getMessage() . "</div>";
+        // หากบันทึกไม่สำเร็จ จะโชว์ Error ที่นี่
+        $message = "<div style='color:red; padding:10px; border:1px solid red;'>❌ เกิดข้อผิดพลาด: " . $e->getMessage() . "</div>";
     }
-
-     
-
-
-
-
 }
-
-
-
-
-
 ?>
 
 <!DOCTYPE html>
@@ -146,4 +145,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </div>
 
 </body>
+
 </html>

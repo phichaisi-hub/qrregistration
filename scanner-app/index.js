@@ -18,15 +18,22 @@ app.post('/scan', async (req, res) => {
     const { registration_id } = req.body;
 
     try {
-        // 1. ตรวจสอบว่ามี QR นี้ในระบบหรือไม่
-        const [rows] = await db.execute('SELECT * FROM registrations WHERE registration_id = ?', [registration_id]);
+        // ตรวจสอบว่า db พร้อมใช้งาน และใส่ await ให้เรียบร้อย
+        const result = await db.execute(
+            'SELECT * FROM registrations WHERE registration_id = ?', 
+            [registration_id]
+        );
 
-        // กรณีที่ 1: หากไม่มีในเรคคอร์ด
+        // ตรวจสอบว่า result เป็น Array หรือไม่ก่อนจะดึง rows ออกมา
+        if (!Array.isArray(result)) {
+            console.error("Database did not return an array:", result);
+            return res.status(500).json({ message: "Internal Server Error" });
+        }
+
+        const rows = result[0]; // rows คือข้อมูลที่ได้จากฐานข้อมูล
+
         if (rows.length === 0) {
-            return res.json({ 
-                status: "not_found", 
-                message: "ไม่พบข้อมูลการลงทะเบียน (ID ไม่ถูกต้อง)" 
-            });
+            return res.json({ status: "not_found", message: "ไม่พบ ID ในระบบ" });
         }
 
         const user = rows[0];
@@ -68,3 +75,4 @@ app.post('/scan', async (req, res) => {
 });
 
 app.listen(3001, () => console.log('Scanner App running on port 3001'));
+

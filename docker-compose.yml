@@ -34,7 +34,7 @@ services:
     container_name: event-filemanager
     restart: always
     ports:
-      - "8082:80"  # เข้าใช้งานผ่าน http://172.28.20.92:8082
+      - "8085:80"  # เข้าใช้งานผ่าน http://172.28.20.92:8085
     volumes:
       # เชื่อม Folder งานของคุณเข้ากับ File Manager (ปรับ Path ซ้ายมือตามจริง)
       - ./app:/srv

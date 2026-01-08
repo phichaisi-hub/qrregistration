@@ -15,20 +15,17 @@ services:
     image: php:8.1-apache
     container_name: event-web
     restart: always
+    user: "0:0" # เพิ่มสิทธิ์ Root ให้ Web อ่านไฟล์ได้
     depends_on:
       - db
     ports:
       - "8080:80"
     volumes:
       - .:/var/www/html
-    # ใส่ DNS เพื่อให้ Container มองเห็นทางออกไป Gmail
     dns:
       - 8.8.8.8
-      - 8.8.4.4
-    # ตัด apt-get ออกทั้งหมด เหลือแค่ติดตั้ง Driver ฐานข้อมูล (ซึ่งมีใน Image อยู่แล้วไม่ต้องโหลด)
     command: >
-      sh -c "docker-php-ext-install pdo pdo_mysql 
-      && apache2-foreground"
+      sh -c "docker-php-ext-install pdo pdo_mysql && apache2-foreground"
     networks:
       - event-net
 
@@ -36,8 +33,7 @@ services:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    # เพิ่มบรรทัดนี้เพื่อให้แก้ไขไฟล์ได้
-    user: "0:0" 
+    user: "0:0" # เพิ่มสิทธิ์ Root ให้แก้ไขไฟล์ได้
     ports:
       - "8099:80"
     volumes:

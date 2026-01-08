@@ -21,15 +21,13 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html
-    # ใส่ DNS 8.8.8.8 ของ Google เข้าไปตรงนี้เพื่อช่วยให้หา Gmail เจอ
+    # ใส่ DNS เพื่อให้ Container มองเห็นทางออกไป Gmail
     dns:
       - 8.8.8.8
       - 8.8.4.4
-    environment:
-      TZ: "Asia/Bangkok"
+    # ตัด apt-get ออกทั้งหมด เหลือแค่ติดตั้ง Driver ฐานข้อมูล (ซึ่งมีใน Image อยู่แล้วไม่ต้องโหลด)
     command: >
-      sh -c "apt-get update && apt-get install -y openssl libssl-dev
-      && docker-php-ext-install pdo pdo_mysql 
+      sh -c "docker-php-ext-install pdo pdo_mysql 
       && apache2-foreground"
     networks:
       - event-net
@@ -42,7 +40,7 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-    # แก้ไขคำสั่งให้ No Password และไม่ต้องใช้ Database
+    # บังคับ No Password แบบเด็ดขาด
     command: ["--root", "/srv", "--noauth", "--database", ""]
     networks:
       - event-net

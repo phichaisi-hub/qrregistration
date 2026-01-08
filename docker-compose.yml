@@ -8,55 +8,43 @@ services:
       MYSQL_DATABASE: event_db
     volumes:
       - db_data:/var/lib/mysql
-    networks:
-      - event-net
+    network_mode: "host"
 
   web:
     image: php:8.1-apache
     container_name: event-web
     restart: always
-    user: "0:0"  # บังคับใช้สิทธิ์ Root ในการอ่านไฟล์
-    depends_on:
-      - db
-    ports:
-      - "8080:80"
+    user: "0:0"
+    network_mode: "host"
     volumes:
       - .:/var/www/html
-    dns:
-      - 8.8.8.8
+    # คำสั่งนี้จะช่วยซ่อม Permission และติดตั้ง Driver DB ไปในตัว
     command: >
-      sh -c "docker-php-ext-install pdo pdo_mysql && apache2-foreground"
-    networks:
-      - event-net
+      sh -c "chown -R www-data:www-data /var/www/html 
+      && chmod -R 755 /var/www/html
+      && docker-php-ext-install pdo pdo_mysql 
+      && apache2-foreground"
 
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
     user: "0:0"
-    ports:
-      - "8099:80"
+    network_mode: "host"
     volumes:
       - .:/srv
-    # แก้ไข Database Path เป็น /tmp เพื่อให้เข้าได้ทันทีโดยไม่ต้องใส่รหัส
-    command: ["--root", "/srv", "--noauth", "--database", "/tmp/filebrowser.db"]
-    networks:
-      - event-net
+    command: ["--root", "/srv", "--noauth", "--port", "8099", "--database", "/tmp/filebrowser.db"]
 
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: event-phpmyadmin
-    depends_on:
-      - db
-    ports:
-      - "8081:80"
+    network_mode: "host"
     environment:
-      PMA_HOST: db
-    networks:
-      - event-net
-
-networks:
-  event-net:
+      PMA_HOST: 127.0.0.1
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: rootpassword
+    # สั่งให้ phpMyAdmin รันที่พอร์ต 8081 (เพื่อไม่ให้ทับพอร์ต 80 ของเว็บหลัก)
+    command: sh -c "sed -i 's/Listen 80/Listen 8081/' /etc/apache2/ports.conf && apache2-foreground"
 
 volumes:
   db_data:

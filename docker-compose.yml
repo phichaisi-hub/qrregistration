@@ -5,10 +5,13 @@ services:
     image: php:8.1-apache
     container_name: event-web
     restart: always
+    depends_on:
+      - db
     ports:
       - "8080:80"
     volumes:
-      - .:/var/www/html  # ฝั่งเครื่องเรา ( . ) เชื่อมกับ /var/www/html ในเว็บ
+      - .:/var/www/html
+    # เพิ่มคำสั่งล้างสิทธิ์ทับลงไป
     command: >
       sh -c "chown -R www-data:www-data /var/www/html 
       && chmod -R 755 /var/www/html 

@@ -31,13 +31,14 @@ services:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    user: "0:0"  # รันเป็น Root เพื่อให้มีสิทธิ์เขียน/แก้ไขไฟล์ในเครื่อง
+    user: "0:0"
     ports:
       - "8099:80"
     volumes:
-      - .:/srv  # เชื่อมโฟลเดอร์เดียวกับ web เข้าที่ /srv (ซึ่งเป็น Root ของตัวนี้)
-    # ตั้งค่าให้ไม่ต้องมีขั้นตอน Setup และ Login เข้ามาเห็นไฟล์ได้เลย
-    command: [ "--noauth" ] # **(ตัวเลือก)** ถ้าต้องการให้ Login ปกติ ให้เอาบรรทัดนี้ออก
+      - .:/srv
+      # เพิ่มบรรทัดด้านล่างเพื่อให้ระบบจำการตั้งค่าและ User ที่คุณสร้างได้ถาวร
+      - ./filebrowser.db:/database/filebrowser.db 
+    # เอาคำสั่ง [ "--noauth" ] ออก เพื่อเปิดโหมดล็อกอินปกติ
     networks:
       - event-net
 

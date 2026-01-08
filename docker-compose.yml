@@ -1,5 +1,4 @@
 services:
-  # 1. Database: MariaDB
   db:
     image: mariadb:10.6
     container_name: event-db
@@ -12,7 +11,6 @@ services:
     networks:
       - event-net
 
-  # 2. Web Server: Apache + PHP
   web:
     image: php:8.1-apache
     container_name: event-web
@@ -22,27 +20,25 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - .:/var/www/html  # เชื่อมโฟลเดอร์ปัจจุบันเข้ากับโฟลเดอร์เว็บ
+      - .:/var/www/html
     networks:
       - event-net
 
-  # 3. File Manager: Login แล้วจัดการไฟล์ใน /var/www/html ได้เลย
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    user: "0:0"
+    # ใช้ user root เพื่อให้สร้าง database file ได้เอง
+    user: "0:0" 
     ports:
       - "8099:80"
     volumes:
       - .:/srv
-      # เพิ่มบรรทัดด้านล่างเพื่อให้ระบบจำการตั้งค่าและ User ที่คุณสร้างได้ถาวร
-      - ./filebrowser.db:/database/filebrowser.db 
-    # เอาคำสั่ง [ "--noauth" ] ออก เพื่อเปิดโหมดล็อกอินปกติ
+      # สำคัญ: ถ้าไม่มีไฟล์ .db ระบบบางเวอร์ชันจะหยุดทำงาน (Refused to connect)
+      - ./filebrowser.db:/database/filebrowser.db
     networks:
       - event-net
 
-  # 4. phpMyAdmin: จัดการฐานข้อมูล
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: event-phpmyadmin

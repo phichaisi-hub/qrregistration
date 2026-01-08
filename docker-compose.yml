@@ -28,14 +28,13 @@ services:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    # ใช้ user root เพื่อให้สร้าง database file ได้เอง
-    user: "0:0" 
+    user: "0:0"
     ports:
       - "8099:80"
     volumes:
-      - .:/srv
-      # สำคัญ: ถ้าไม่มีไฟล์ .db ระบบบางเวอร์ชันจะหยุดทำงาน (Refused to connect)
-      - ./filebrowser.db:/database/filebrowser.db
+      - .:/srv  # ไฟล์เว็บจะอยู่ที่นี่
+      # ย้าย database ไปเก็บใน volume ของ docker แทน เพื่อเลี่ยงปัญหา "is a directory"
+      - fm_db:/database/ 
     networks:
       - event-net
 
@@ -56,3 +55,4 @@ networks:
 
 volumes:
   db_data:
+  fm_db: # เก็บฐานข้อมูลของ file manager แยกต่างหาก

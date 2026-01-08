@@ -23,9 +23,10 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html
-    # บังคับแก้ไขสิทธิ์ไฟล์ทุกครั้งที่ Start เพื่อให้ Apache อ่านไฟล์ที่อัปโหลดผ่าน File Manager ได้
+    # แก้ไขคำสั่ง command ให้รวมการติดตั้งไดรเวอร์ MySQL เข้าไปด้วย
     command: >
-      sh -c "chown -R www-data:www-data /var/www/html 
+      sh -c "docker-php-ext-install pdo pdo_mysql 
+      && chown -R www-data:www-data /var/www/html 
       && chmod -R 755 /var/www/html 
       && apache2-foreground"
     networks:

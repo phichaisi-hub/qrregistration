@@ -24,15 +24,16 @@ services:
     networks:
       - event-net
 
-  # 4. เพิ่มระบบ File Manager (เข้าผ่านพอร์ต 8082)
+  # แก้ไข File Manager ให้เข้าถึง Path เดียวกับ Web 100%
   filemanager:
     image: tinyfilemanager/tinyfilemanager:latest
     container_name: event-filemanager
     restart: always
+    environment:
+      # บังคับให้ File Manager มองที่โฟลเดอร์หลักโดยตรง
+      - FM_ROOT_PATH=/var/www/html
     ports:
       - "8099:80"
-    environment:
-      - FM_ROOT_PATH=/var/www/html # บังคับตำแหน่ง Root
     volumes:
       - .:/var/www/html
     networks:

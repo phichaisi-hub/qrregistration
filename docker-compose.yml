@@ -1,5 +1,5 @@
 services:
-  # 1. ฐานข้อมูล MariaDB
+  # 1. Database: MariaDB (ตั้งเวลาไทย + เก็บข้อมูลถาวร)
   db:
     image: mariadb:10.6
     container_name: event-db
@@ -7,12 +7,13 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: event_db
+      TZ: "Asia/Bangkok"
     volumes:
       - db_data:/var/lib/mysql
     networks:
       - event-net
 
-  # 2. เว็บเซอร์เวอร์ Apache + PHP (แก้ Permission ในนี้)
+  # 2. Web Server: PHP 8.1 + Apache (ติดตั้ง Driver MySQL + แก้ Permission)
   web:
     image: php:8.1-apache
     container_name: event-web
@@ -23,7 +24,9 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html
-    # แก้ไขคำสั่ง command ให้รวมการติดตั้งไดรเวอร์ MySQL เข้าไปด้วย
+    environment:
+      TZ: "Asia/Bangkok"
+    # ติดตั้ง Driver สำหรับเชื่อมต่อ DB และจัดการสิทธิ์ไฟล์ให้อัตโนมัติ
     command: >
       sh -c "docker-php-ext-install pdo pdo_mysql 
       && chown -R www-data:www-data /var/www/html 
@@ -32,21 +35,25 @@ services:
     networks:
       - event-net
 
-  # 3. ระบบจัดการไฟล์ (File Manager)
+  # 3. File Manager: จัดการไฟล์ผ่าน Browser (พอร์ต 8099)
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    user: "0:0" # รันเป็น root เพื่อให้มีสิทธิ์แก้ไขไฟล์ใน Host
+    user: "0:0"
     ports:
       - "8099:80"
     volumes:
-      - .:/srv # Map โฟลเดอร์ปัจจุบันของเครื่องเราเข้าหน้าแรกของ File Manager
-      - fm_db:/database/ # เก็บฐานข้อมูลตั้งค่าไว้ใน Docker Volume (ป้องกัน Error 403/Refused)
+      - .:/srv
+      - fm_db:/database/
+    environment:
+      TZ: "Asia/Bangkok"
+    # บังคับให้เปิดมาแล้วเจอโฟลเดอร์เว็บทันที
+    command: ["--root", "/srv"]
     networks:
       - event-net
 
-  # 4. จัดการฐานข้อมูลผ่านหน้าเว็บ
+  # 4. phpMyAdmin: จัดการฐานข้อมูล (พอร์ต 8081)
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: event-phpmyadmin
@@ -56,6 +63,7 @@ services:
       - "8081:80"
     environment:
       PMA_HOST: db
+      TZ: "Asia/Bangkok"
     networks:
       - event-net
 

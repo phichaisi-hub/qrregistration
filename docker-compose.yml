@@ -1,5 +1,4 @@
 services:
-  # 1. Database: MariaDB
   db:
     image: mariadb:10.6
     container_name: event-db
@@ -13,7 +12,6 @@ services:
     networks:
       - event-net
 
-  # 2. Web Server: PHP 8.1 + Apache (รวมทุกคำสั่งติดตั้งไว้ที่นี่)
   web:
     image: php:8.1-apache
     container_name: event-web
@@ -24,21 +22,19 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html
+    # เพิ่ม DNS เพื่อให้มองเห็น smtp.gmail.com
     dns:
       - 8.8.8.8
-      - 8.8.4.4
     environment:
       TZ: "Asia/Bangkok"
-    # ชุดคำสั่งที่รวมทั้ง SSL, Database Driver และ Permission
+    # แก้ไข command เพื่อให้ส่งเมลได้และเชื่อมต่อ DB ได้
     command: >
       sh -c "apt-get update && apt-get install -y openssl libssl-dev
       && docker-php-ext-install pdo pdo_mysql 
-      && chown -R www-data:www-data /var/www/html 
       && apache2-foreground"
     networks:
       - event-net
 
-  # 3. File Manager: จัดการไฟล์ (พอร์ต 8099)
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
@@ -51,11 +47,11 @@ services:
       - fm_db:/database/
     environment:
       TZ: "Asia/Bangkok"
-    command: ["--root", "/srv"]
+    # เพิ่ม --noauth ตรงนี้เพื่อให้เข้าได้ทันทีโดยไม่ต้องใส่ User/Password
+    command: ["--root", "/srv", "--noauth"]
     networks:
       - event-net
 
-  # 4. phpMyAdmin: จัดการฐานข้อมูล (พอร์ต 8081)
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: event-phpmyadmin

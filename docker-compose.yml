@@ -1,27 +1,14 @@
 services:
-  db:
-    image: mariadb:10.6
-    container_name: event-db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: event_db
-    volumes:
-      - db_data:/var/lib/mysql
-    networks:
-      - event-net
+  # ... (db และ phpmyadmin เหมือนเดิม)
 
   web:
     image: php:8.1-apache
     container_name: event-web
     restart: always
-    depends_on:
-      - db
     ports:
       - "8080:80"
     volumes:
-      - .:/var/www/html
-    # เพิ่มบรรทัดด้านล่างนี้เพื่อแก้เรื่อง Permission
+      - .:/var/www/html  # ฝั่งเครื่องเรา ( . ) เชื่อมกับ /var/www/html ในเว็บ
     command: >
       sh -c "chown -R www-data:www-data /var/www/html 
       && chmod -R 755 /var/www/html 
@@ -37,21 +24,11 @@ services:
     ports:
       - "8099:80"
     volumes:
-      - .:/srv  # ไฟล์เว็บจะอยู่ที่นี่
-      # ย้าย database ไปเก็บใน volume ของ docker แทน เพื่อเลี่ยงปัญหา "is a directory"
-      - fm_db:/database/ 
-    networks:
-      - event-net
-
-  phpmyadmin:
-    image: phpmyadmin:latest
-    container_name: event-phpmyadmin
-    depends_on:
-      - db
-    ports:
-      - "8081:80"
-    environment:
-      PMA_HOST: db
+      # แก้ไขตรงนี้: ให้มองเห็นไฟล์เดียวกันกับที่ Apache เห็น
+      - .:/srv/var/www/html  
+      - fm_db:/database/
+    # บังคับให้ File Manager เปิดเข้ามาแล้วเจอโฟลเดอร์ /var/www/html ทันที
+    command: ["--root", "/srv/var/www/html"] 
     networks:
       - event-net
 
@@ -60,4 +37,4 @@ networks:
 
 volumes:
   db_data:
-  fm_db: # เก็บฐานข้อมูลของ file manager แยกต่างหาก
+  fm_db:

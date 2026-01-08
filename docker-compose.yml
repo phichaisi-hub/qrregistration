@@ -1,6 +1,18 @@
 services:
-  # ... (db และ phpmyadmin เหมือนเดิม)
+  # 1. ฐานข้อมูล MariaDB
+  db:
+    image: mariadb:10.6
+    container_name: event-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: event_db
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - event-net
 
+  # 2. เว็บเซอร์เวอร์ Apache + PHP (แก้ Permission ในนี้)
   web:
     image: php:8.1-apache
     container_name: event-web
@@ -11,7 +23,7 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html
-    # เพิ่มคำสั่งล้างสิทธิ์ทับลงไป
+    # บังคับแก้ไขสิทธิ์ไฟล์ทุกครั้งที่ Start เพื่อให้ Apache อ่านไฟล์ที่อัปโหลดผ่าน File Manager ได้
     command: >
       sh -c "chown -R www-data:www-data /var/www/html 
       && chmod -R 755 /var/www/html 
@@ -19,19 +31,30 @@ services:
     networks:
       - event-net
 
+  # 3. ระบบจัดการไฟล์ (File Manager)
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    user: "0:0"
+    user: "0:0" # รันเป็น root เพื่อให้มีสิทธิ์แก้ไขไฟล์ใน Host
     ports:
       - "8099:80"
     volumes:
-      # แก้ไขตรงนี้: ให้มองเห็นไฟล์เดียวกันกับที่ Apache เห็น
-      - .:/srv/var/www/html  
-      - fm_db:/database/
-    # บังคับให้ File Manager เปิดเข้ามาแล้วเจอโฟลเดอร์ /var/www/html ทันที
-    command: ["--root", "/srv/var/www/html"] 
+      - .:/srv # Map โฟลเดอร์ปัจจุบันของเครื่องเราเข้าหน้าแรกของ File Manager
+      - fm_db:/database/ # เก็บฐานข้อมูลตั้งค่าไว้ใน Docker Volume (ป้องกัน Error 403/Refused)
+    networks:
+      - event-net
+
+  # 4. จัดการฐานข้อมูลผ่านหน้าเว็บ
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: event-phpmyadmin
+    depends_on:
+      - db
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
     networks:
       - event-net
 

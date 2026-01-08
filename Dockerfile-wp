@@ -1,7 +1,16 @@
-FROM wordpress:latest
+FROM php:8.1-apache
 
-# ติดตั้ง pdo และ pdo_mysql driver
-RUN docker-php-ext-install pdo pdo_mysql
+# ติดตั้ง PHP Extensions สำหรับ MySQL และระบบส่งเมล
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    zip \
+    unzip \
+    && docker-php-ext-install pdo pdo_mysql
 
-# Restart Apache เพื่อโหลดค่าใหม่
-RUN apachectl restart
+# ติดตั้ง Composer เพื่อโหลด PHPMailer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# เปิดการทำงานของ Apache Mod Rewrite (เผื่อใช้ในอนาคต)
+RUN a2enmod rewrite
+
+WORKDIR /var/www/html

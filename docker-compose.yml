@@ -43,10 +43,12 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-      - fm_db:/database/
+      # 1. เอาบรรทัด fm_db:/database/ ออกชั่วคราว (ใส่ # ไว้ข้างหน้า)
+      # - fm_db:/database/ 
     environment:
       TZ: "Asia/Bangkok"
-    command: ["--root", "/srv", "--noauth"]
+    # 2. ใช้คำสั่งนี้เพื่อรันแบบ Standalone ไม่ต้องง้อไฟล์ DB
+    command: ["--noauth", "--database", "/tmp/temp.db", "--root", "/srv"]
     networks:
       - event-net
 

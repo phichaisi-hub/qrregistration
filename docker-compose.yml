@@ -36,11 +36,12 @@ services:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
+    # เพิ่มบรรทัดนี้เพื่อให้แก้ไขไฟล์ได้
+    user: "0:0" 
     ports:
       - "8099:80"
     volumes:
       - .:/srv
-    # แก้ไขตรง --database ให้ระบุชื่อไฟล์ลงไปใน /tmp
     command: ["--root", "/srv", "--noauth", "--database", "/tmp/filebrowser.db"]
     networks:
       - event-net

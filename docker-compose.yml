@@ -6,65 +6,40 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: event_db
-      TZ: "Asia/Bangkok"
     volumes:
       - db_data:/var/lib/mysql
-    networks:
-      - event-net
+    network_mode: "host"
 
   web:
     image: php:8.1-apache
     container_name: event-web
     restart: always
-    depends_on:
-      - db
-    ports:
-      - "8080:80"
+    network_mode: "host"
     volumes:
       - .:/var/www/html
-    dns:
-      - 8.8.8.8
-    environment:
-      TZ: "Asia/Bangkok"
+    # เพิ่มการติดตั้ง openssl พร้อมคำสั่งเช็คเน็ตเบื้องต้น
     command: >
-      sh -c "apt-get update && apt-get install -y openssl libssl-dev
+      sh -c "apt-get update && apt-get install -y openssl libssl-dev --no-install-recommends
       && docker-php-ext-install pdo pdo_mysql 
       && apache2-foreground"
-    networks:
-      - event-net
 
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    user: "0:0"
-    ports:
-      - "8099:80"
+    network_mode: "host"
     volumes:
       - .:/srv
-    environment:
-      TZ: "Asia/Bangkok"
-    # บังคับใช้ฐานข้อมูลชั่วคราวใน /tmp และสั่ง noauth แบบเด็ดขาด
-    command: ["--root", "/srv", "--noauth", "--database", "/tmp/filebrowser.db"]
-    networks:
-      - event-net
+    command: ["--root", "/srv", "--noauth", "--port", "8099", "--database", ""]
 
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: event-phpmyadmin
-    depends_on:
-      - db
-    ports:
-      - "8081:80"
+    network_mode: "host"
     environment:
-      PMA_HOST: db
+      PMA_HOST: 127.0.0.1
       MYSQL_ROOT_PASSWORD: rootpassword
-      TZ: "Asia/Bangkok"
-    networks:
-      - event-net
-
-networks:
-  event-net:
+    command: sh -c "sed -i 's/Listen 80/Listen 8081/' /etc/apache2/ports.conf && apache2-foreground"
 
 volumes:
   db_data:

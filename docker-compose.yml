@@ -1,5 +1,4 @@
 services:
-  # 1. Database: MariaDB (ตั้งเวลาไทย + เก็บข้อมูลถาวร)
   db:
     image: mariadb:10.6
     container_name: event-db
@@ -13,7 +12,6 @@ services:
     networks:
       - event-net
 
-  # 2. Web Server: PHP 8.1 + Apache (ติดตั้ง Driver MySQL + แก้ Permission)
   web:
     image: php:8.1-apache
     container_name: event-web
@@ -26,17 +24,16 @@ services:
       - .:/var/www/html
     environment:
       TZ: "Asia/Bangkok"
-    # ติดตั้ง Driver สำหรับเชื่อมต่อ DB และจัดการสิทธิ์ไฟล์ให้อัตโนมัติ
+    # ใช้สคริปต์ที่รันครั้งเดียวจบและเช็คว่าถ้าติดตั้งแล้วไม่ต้องทำซ้ำ
     command: >
-      sh -c "docker-php-ext-install pdo pdo_mysql 
+      sh -c "curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions 
+      && chmod +x /usr/local/bin/install-php-extensions 
+      && install-php-extensions pdo_mysql 
       && chown -R www-data:www-data /var/www/html 
-      && find /var/www/html -type d -exec chmod 755 {} \; 
-      && find /var/www/html -type f -exec chmod 644 {} \; 
       && apache2-foreground"
     networks:
       - event-net
 
-  # 3. File Manager: จัดการไฟล์ผ่าน Browser (พอร์ต 8099)
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
@@ -49,12 +46,10 @@ services:
       - fm_db:/database/
     environment:
       TZ: "Asia/Bangkok"
-    # บังคับให้เปิดมาแล้วเจอโฟลเดอร์เว็บทันที
     command: ["--root", "/srv"]
     networks:
       - event-net
 
-  # 4. phpMyAdmin: จัดการฐานข้อมูล (พอร์ต 8081)
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: event-phpmyadmin

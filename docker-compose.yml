@@ -12,7 +12,6 @@ services:
       - event-net
 
   web:
-    # เปลี่ยนจาก build เป็น image โดยตรง
     image: php:8.1-apache
     container_name: event-web
     restart: always
@@ -22,6 +21,18 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html
+    networks:
+      - event-net
+
+  # 4. เพิ่มระบบ File Manager (เข้าผ่านพอร์ต 8082)
+  filemanager:
+    image: tinyfilemanager/tinyfilemanager:latest
+    container_name: event-filemanager
+    restart: always
+    ports:
+      - "8082:80"
+    volumes:
+      - .:/var/www/html # เชื่อมกับโฟลเดอร์เดียวกันกับหน้าเว็บ
     networks:
       - event-net
 

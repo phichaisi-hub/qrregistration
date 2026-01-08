@@ -22,12 +22,10 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html
-    # เพิ่ม DNS เพื่อให้มองเห็น smtp.gmail.com
     dns:
       - 8.8.8.8
     environment:
       TZ: "Asia/Bangkok"
-    # แก้ไข command เพื่อให้ส่งเมลได้และเชื่อมต่อ DB ได้
     command: >
       sh -c "apt-get update && apt-get install -y openssl libssl-dev
       && docker-php-ext-install pdo pdo_mysql 
@@ -44,11 +42,10 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-      - fm_db:/database/
     environment:
       TZ: "Asia/Bangkok"
-    # เพิ่ม --noauth ตรงนี้เพื่อให้เข้าได้ทันทีโดยไม่ต้องใส่ User/Password
-    command: ["--root", "/srv", "--noauth"]
+    # บังคับใช้ฐานข้อมูลชั่วคราวใน /tmp และสั่ง noauth แบบเด็ดขาด
+    command: ["--root", "/srv", "--noauth", "--database", "/tmp/filebrowser.db"]
     networks:
       - event-net
 
@@ -61,6 +58,7 @@ services:
       - "8081:80"
     environment:
       PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: rootpassword
       TZ: "Asia/Bangkok"
     networks:
       - event-net
@@ -70,4 +68,3 @@ networks:
 
 volumes:
   db_data:
-  fm_db:

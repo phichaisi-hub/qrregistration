@@ -30,7 +30,7 @@ services:
     container_name: event-filemanager
     restart: always
     ports:
-      - "8082:80"
+      - "8099:80"
     volumes:
       - .:/var/www/html # เชื่อมกับโฟลเดอร์เดียวกันกับหน้าเว็บ
     networks:

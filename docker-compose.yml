@@ -15,7 +15,7 @@ services:
     image: php:8.1-apache
     container_name: event-web
     restart: always
-    user: "0:0" # เพิ่มสิทธิ์ Root ให้ Web อ่านไฟล์ได้
+    user: "0:0"  # บังคับใช้สิทธิ์ Root ในการอ่านไฟล์
     depends_on:
       - db
     ports:
@@ -33,11 +33,12 @@ services:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    user: "0:0" # เพิ่มสิทธิ์ Root ให้แก้ไขไฟล์ได้
+    user: "0:0"
     ports:
       - "8099:80"
     volumes:
       - .:/srv
+    # แก้ไข Database Path เป็น /tmp เพื่อให้เข้าได้ทันทีโดยไม่ต้องใส่รหัส
     command: ["--root", "/srv", "--noauth", "--database", "/tmp/filebrowser.db"]
     networks:
       - event-net

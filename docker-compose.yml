@@ -21,21 +21,23 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html
+    # บังคับ ServerName เพื่อลบ Error ใน Log
+    command: >
+      sh -c "echo 'ServerName localhost' >> /etc/apache2/apache2.conf 
+      && apache2-foreground"
     networks:
       - event-net
 
-  # แก้ไข File Manager ให้เข้าถึง Path เดียวกับ Web 100%
+  # เปลี่ยนจาก TinyFileManager เป็น File Browser (ทรงพลังกว่า แยก Service ชัดเจน)
   filemanager:
-    image: tinyfilemanager/tinyfilemanager:latest
+    image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    environment:
-      # บังคับให้ File Manager มองที่โฟลเดอร์หลักโดยตรง
-      - FM_ROOT_PATH=/var/www/html
+    user: "0:0" # รันในฐานะ root เพื่อให้จัดการไฟล์ใน Volume ได้จริง
     ports:
       - "8099:80"
     volumes:
-      - .:/var/www/html
+      - .:/srv # เชื่อมกับโฟลเดอร์ปัจจุบันของ host
     networks:
       - event-net
 

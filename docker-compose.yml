@@ -31,8 +31,10 @@ services:
     restart: always
     ports:
       - "8099:80"
+    environment:
+      - FM_ROOT_PATH=/var/www/html # บังคับตำแหน่ง Root
     volumes:
-      - .:/var/www/html # เชื่อมกับโฟลเดอร์เดียวกันกับหน้าเว็บ
+      - .:/var/www/html
     networks:
       - event-net
 

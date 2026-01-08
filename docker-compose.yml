@@ -8,38 +8,59 @@ services:
       MYSQL_DATABASE: event_db
     volumes:
       - db_data:/var/lib/mysql
-    network_mode: "host"
+    networks:
+      - event-net
 
   web:
     image: php:8.1-apache
     container_name: event-web
     restart: always
-    network_mode: "host"
+    depends_on:
+      - db
+    ports:
+      - "8080:80"
     volumes:
       - .:/var/www/html
-    # เพิ่มการติดตั้ง openssl พร้อมคำสั่งเช็คเน็ตเบื้องต้น
+    # ใส่ DNS 8.8.8.8 ของ Google เข้าไปตรงนี้เพื่อช่วยให้หา Gmail เจอ
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    environment:
+      TZ: "Asia/Bangkok"
     command: >
-      sh -c "apt-get update && apt-get install -y openssl libssl-dev --no-install-recommends
+      sh -c "apt-get update && apt-get install -y openssl libssl-dev
       && docker-php-ext-install pdo pdo_mysql 
       && apache2-foreground"
+    networks:
+      - event-net
 
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
-    network_mode: "host"
+    ports:
+      - "8099:80"
     volumes:
       - .:/srv
-    command: ["--root", "/srv", "--noauth", "--port", "8099", "--database", ""]
+    # แก้ไขคำสั่งให้ No Password และไม่ต้องใช้ Database
+    command: ["--root", "/srv", "--noauth", "--database", ""]
+    networks:
+      - event-net
 
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: event-phpmyadmin
-    network_mode: "host"
+    depends_on:
+      - db
+    ports:
+      - "8081:80"
     environment:
-      PMA_HOST: 127.0.0.1
-      MYSQL_ROOT_PASSWORD: rootpassword
-    command: sh -c "sed -i 's/Listen 80/Listen 8081/' /etc/apache2/ports.conf && apache2-foreground"
+      PMA_HOST: db
+    networks:
+      - event-net
+
+networks:
+  event-net:
 
 volumes:
   db_data:

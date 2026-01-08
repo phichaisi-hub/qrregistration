@@ -46,7 +46,7 @@ services:
       - fm_db:/database/
     environment:
       TZ: "Asia/Bangkok"
-    command: ["--root", "/srv"]
+    command: ["--root", "/srv", "--noauth"]
     networks:
       - event-net
 

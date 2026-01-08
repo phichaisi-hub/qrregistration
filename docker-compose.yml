@@ -31,6 +31,11 @@ services:
       && install-php-extensions pdo_mysql 
       && chown -R www-data:www-data /var/www/html 
       && apache2-foreground"
+    
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    
     networks:
       - event-net
 

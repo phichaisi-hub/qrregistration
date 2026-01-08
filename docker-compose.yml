@@ -1,5 +1,4 @@
 services:
-  # 1. Database
   db:
     image: mariadb:10.6
     container_name: event-db
@@ -12,23 +11,20 @@ services:
     networks:
       - event-net
 
-  # 2. Web Server (PHP + Apache)
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile-php
+    # เปลี่ยนจาก build เป็น image โดยตรง
+    image: php:8.1-apache
     container_name: event-web
     restart: always
     depends_on:
       - db
     ports:
-      - "8080:80"  # เข้าใช้งานผ่าน http://localhost:8080
+      - "8080:80"
     volumes:
-      - .:/var/www/html  # เก็บไฟล์ register.php และโฟลเดอร์ vendor ไว้ที่นี่
+      - .:/var/www/html
     networks:
       - event-net
 
-  # 3. phpMyAdmin
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: event-phpmyadmin

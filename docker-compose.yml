@@ -10,9 +10,7 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - event-net
-    dns:
-      - 8.8.8.8
-      - 1.1.1.1
+    
     
   web:
     image: php:8.1-apache
@@ -31,8 +29,12 @@ services:
       && chmod -R 755 /var/www/html
       && docker-php-ext-install pdo pdo_mysql 
       && apache2-foreground"
+       
     networks:
       - event-net
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
   filemanager:
     image: filebrowser/filebrowser:latest

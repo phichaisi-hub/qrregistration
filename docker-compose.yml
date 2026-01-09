@@ -34,11 +34,16 @@ services:
   # ถ้า scanner-app เป็นไฟล์ที่คุณเขียนเองและมี Dockerfile ในโฟลเดอร์ scanner-app ให้คงไว้
   # แต่ถ้าไม่มี ให้คอมเมนต์ส่วนนี้ออกก่อนครับ
   scanner-app:
-    image: node:18-alpine # สมมติว่าใช้ Node.js (หรือเปลี่ยนตามแอพของคุณ)
+    image: node:18-alpine
     container_name: event-scanner
     restart: always
+    working_dir: /app
     ports:
       - "3001:3001"
+    volumes:
+      - ./scanner-app:/app
+    # สั่งให้ลง library และรันแอพตอนเปิดเครื่อง
+    command: sh -c "npm install && npm start"
     depends_on:
       - db
     networks:

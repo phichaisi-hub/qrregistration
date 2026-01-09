@@ -40,10 +40,9 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-      - ./filebrowser.db:/database.db
-    command: ["--root", "/srv", "--noauth", "--database", "/database.db"]
-    networks:
-      - event-net
+    # ลบบรรทัด - ./filebrowser.db:/database.db ออกก่อน
+    # แล้วใช้คำสั่งแบบ No Auth ไปก่อนเพื่อความชัวร์
+    command: ["--root", "/srv", "--noauth", "--database", "/tmp/filebrowser.db"]
 
   phpmyadmin:
     image: phpmyadmin:latest

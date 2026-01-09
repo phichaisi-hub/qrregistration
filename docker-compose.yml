@@ -8,45 +8,58 @@ services:
       MYSQL_DATABASE: event_db
     volumes:
       - db_data:/var/lib/mysql
-    network_mode: "host"
+    networks:
+      - event-net
 
   web:
     image: php:8.1-apache
     container_name: event-web
     restart: always
     user: "0:0"
-    network_mode: "host"
+    depends_on:
+      - db
+    ports:
+      - "80:80"
     volumes:
       - .:/var/www/html
-    # เพิ่ม 'ServerName localhost' เพื่อปิด Warning AH00558 ใน Log
     command: >
       sh -c "echo 'ServerName localhost' >> /etc/apache2/apache2.conf 
       && chown -R www-data:www-data /var/www/html 
       && chmod -R 755 /var/www/html
       && docker-php-ext-install pdo pdo_mysql 
       && apache2-foreground"
+    networks:
+      - event-net
 
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     restart: always
     user: "0:0"
-    network_mode: "host"
+    ports:
+      - "8099:80"
     volumes:
       - .:/srv
       - ./filebrowser.db:/database.db
-    # โหมดมีระบบ Login (admin/admin) เพื่อให้กด Logout ได้
-    command: ["--root", "/srv", "--port", "8099", "--database", "/database.db"]
+    command: ["--root", "/srv", "--noauth", "--database", "/database.db"]
+    networks:
+      - event-net
 
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: event-phpmyadmin
-    network_mode: "host"
+    depends_on:
+      - db
+    ports:
+      - "8081:80"
     environment:
-      PMA_HOST: 127.0.0.1
-      PMA_PORT: 3306
+      PMA_HOST: db
       MYSQL_ROOT_PASSWORD: rootpassword
-    command: sh -c "sed -i 's/Listen 80/Listen 8081/' /etc/apache2/ports.conf && apache2-foreground"
+    networks:
+      - event-net
+
+networks:
+  event-net:
 
 volumes:
   db_data:

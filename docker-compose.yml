@@ -10,13 +10,11 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - event-net
+
   wordpress:
-    image: wordpress:latest
-    build: 
-      context: .
-      dockerfile: Dockerfile-wp  # สร้างไฟล์แยกสำหรับ WordPress
-    
+    image: wordpress:latest # ใช้ image ตรงๆ แทนการ build เพื่อลด Error 100
     container_name: event-wp
+    restart: always
     depends_on:
       - db
     ports:
@@ -26,15 +24,17 @@ services:
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: rootpassword
       WORDPRESS_DB_NAME: event_db
-      # เพิ่มบรรทัดด้านล่างนี้
-      PHP_INI_SCAN_DIR: /usr/local/etc/php/conf.d
     volumes:
-      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini 
+      - ./wordpress_data:/var/www/html # เก็บข้อมูล WP ไว้ข้างนอก
+      # หากต้องการปรับไฟล์ php.ini ให้สร้างไฟล์ uploads.ini ไว้ข้างๆ docker-compose.yml
+      # - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini 
     networks:
       - event-net
 
+  # ถ้า scanner-app เป็นไฟล์ที่คุณเขียนเองและมี Dockerfile ในโฟลเดอร์ scanner-app ให้คงไว้
+  # แต่ถ้าไม่มี ให้คอมเมนต์ส่วนนี้ออกก่อนครับ
   scanner-app:
-    build: ./scanner-app
+    image: node:18-alpine # สมมติว่าใช้ Node.js (หรือเปลี่ยนตามแอพของคุณ)
     container_name: event-scanner
     restart: always
     ports:
@@ -53,8 +53,6 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-    # ลบบรรทัด - ./filebrowser.db:/database.db ออกก่อน
-    # แล้วใช้คำสั่งแบบ No Auth ไปก่อนเพื่อความชัวร์
     command: ["--root", "/srv", "--noauth", "--database", "/tmp/filebrowser.db"]
 
   phpmyadmin:
@@ -72,6 +70,7 @@ services:
 
 networks:
   event-net:
+    driver: bridge
 
 volumes:
   db_data:

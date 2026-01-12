@@ -63,7 +63,7 @@ services:
     restart: always
     working_dir: /app
     ports:
-      - "3001:3000"
+      - "3001:3001"
     volumes:
       - ./scanner-app:/app
     depends_on:

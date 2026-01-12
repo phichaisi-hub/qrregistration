@@ -65,14 +65,27 @@ app.post('/scan', async (req, res) => {
             });
         }
 
-        // 3. บันทึกเวลาสแกนสำเร็จ (บังคับใช้เขตเวลาประเทศไทย GMT+7)
-        const now = new Date();
-        const formattedDate = now.toLocaleString('sv-SE', { timeZone: 'Asia/Bangkok' });
-
+        // 3. บันทึกเวลาสแกนสำเร็จ (ใช้ NOW() ของ Database)
         await db.execute(
-            'UPDATE registrations SET attendance = ? WHERE registration_id = ?',
-            [formattedDate, registration_id]
-        );
+    'UPDATE registrations SET attendance = NOW() WHERE registration_id = ?',
+    [registration_id]
+);
+
+// ดึงเวลาที่เพิ่งบันทึกไปกลับมาเพื่อแสดงผล (เพื่อความแม่นยำของหน้าจอ)
+const [updatedRows] = await db.execute(
+    'SELECT attendance FROM registrations WHERE registration_id = ?',
+    [registration_id]
+);
+const finalScanTime = updatedRows[0].attendance;
+
+// 4. ส่งผลลัพธ์กลับไปยังหน้าจอ Scanner
+res.json({
+    status: "success",
+    message: "สแกนสำเร็จ!",
+    company_name: user.company_name,
+    contact_name: user.contact_name,
+    scan_time: finalScanTime // ใช้เวลาจาก DB โดยตรง
+});
 
         // 4. ส่งผลลัพธ์กลับไปยังหน้าจอ Scanner
         res.json({
@@ -100,3 +113,4 @@ app.listen(PORT, () => {
     console.log(`🚀 Scanner App running on port ${PORT}`);
     console.log(`🕒 Server Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
 });
+

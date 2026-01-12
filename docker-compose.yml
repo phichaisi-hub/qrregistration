@@ -35,9 +35,7 @@ services:
     ports:
       - "8080:80"
     volumes:
-      - .:/var/www/html
-    command: >
-      sh -c "docker-php-ext-install pdo pdo_mysql && apache2-foreground"
+      - .:/var/www/html # จุดนี้ต้องตรงกับที่ File Manager (srv) มองเห็น
     networks:
       - event-net
 

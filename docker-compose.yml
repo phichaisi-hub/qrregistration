@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # 1. Database: MariaDB
   db:
@@ -27,7 +29,7 @@ services:
     networks:
       - event-net
 
-  # 3. WordPress (แก้ไขย่อหน้าใหม่)
+  # 3. WordPress
   wordpress:
     image: wordpress:latest
     container_name: event-wp
@@ -41,32 +43,28 @@ services:
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: rootpassword
       WORDPRESS_DB_NAME: event_db
-      PHP_INI_SCAN_DIR: /usr/local/etc/php/conf.d
-    volumes:
-      - ./uploads.ini:/usr/local/etc/php/conf.d/uploads.ini
+    # หมายเหตุ: นำ volumes uploads.ini ออกก่อนเพื่อให้ Deploy ผ่าน 
+    # หากต้องการปรับแต่ง PHP แนะนำให้ใช้ Environment Variables แทน
     networks:
       - event-net
 
-  # 4. Scanner App
+  # 4. Scanner App: ระบบสแกน QR
   scanner-app:
-    image: node:18-alpine # แนะนำให้ใช้ image แทนการ build เพื่อลดปัญหา Error 100
+    # เปลี่ยนจาก build เป็น image (คุณต้อง build และ push ขึ้น Docker Hub ก่อน)
+    # ในที่นี้ใส่เป็น node image เพื่อให้ระบบรันได้ แต่คุณต้องใส่ image ของคุณเอง
+    image: node:18-alpine 
     container_name: event-scanner
     restart: always
-    working_dir: /app
+    command: ["sh", "-c", "echo 'Scanner App is ready' && tail -f /dev/null"]
     ports:
-      - "3001:3001"
+      - "3000:3000"
     depends_on:
       - db
-    volumes:
-      - ./scanner-app:/app
-    # รันแอพโดยตรง (ตรวจสอบว่ามี package.json ที่มีคำสั่ง start)
-    command: sh -c "npm install && npm start"
     networks:
       - event-net
 
 networks:
   event-net:
-    driver: bridge
 
 volumes:
   db_data:

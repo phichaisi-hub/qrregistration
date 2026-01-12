@@ -57,7 +57,7 @@ services:
     restart: always
     command: ["sh", "-c", "echo 'Scanner App is ready' && tail -f /dev/null"]
     ports:
-      - "3000:3000"
+      - "3001:3001"
     depends_on:
       - db
     networks:

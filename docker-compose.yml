@@ -37,7 +37,14 @@ services:
     volumes:
       - .:/var/www/html
     command: >
-      sh -c "echo 'ServerName localhost' >> /etc/apache2/apache2.conf &&
+      sh -c "apt-get update && apt-get install -y ssmtp &&
+      echo 'root=impactculinova@gmail.com' > /etc/ssmtp/ssmtp.conf &&
+      echo 'mailhub=smtp.gmail.com:587' >> /etc/ssmtp/ssmtp.conf &&
+      echo 'AuthUser=impactculinova@gmail.com' >> /etc/ssmtp/ssmtp.conf &&
+      echo 'AuthPass=dltqosflsstoprhc' >> /etc/ssmtp/ssmtp.conf &&
+      echo 'UseSTARTTLS=YES' >> /etc/ssmtp/ssmtp.conf &&
+      echo 'sendmail_path = /usr/sbin/ssmtp -t' > /usr/local/etc/php/conf.d/mail.ini &&
+      echo 'ServerName localhost' >> /etc/apache2/apache2.conf &&
       docker-php-ext-install pdo pdo_mysql &&
       apache2-foreground"
     networks:

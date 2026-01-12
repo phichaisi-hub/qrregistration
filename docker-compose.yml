@@ -67,6 +67,8 @@ services:
     working_dir: /app
     ports:
       - "3001:3001"
+    environment:
+      TZ: Asia/Bangkok  # เพิ่มบรรทัดนี้
     volumes:
       - ./scanner-app:/app
     depends_on:

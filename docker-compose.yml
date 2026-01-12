@@ -37,8 +37,8 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-      - ./filebrowser.db:/database.db
-    # ตั้งค่าให้เข้าใช้งานได้ทันทีโดยไม่ต้องถามหาไฟล์ DB ที่ซับซ้อน
+      - ./filebrowser.db:/database.db  # มั่นใจว่าทำขั้นตอน touch แล้ว
+    # เพิ่มคำสั่งให้ใช้ฐานข้อมูลในจุดที่เรา mount ไว้
     command: ["--root", "/srv", "--noauth", "--database", "/database.db"]
     networks:
       - event-net

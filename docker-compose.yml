@@ -36,22 +36,22 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html
+    # เพิ่มคำสั่ง chmod ไว้ข้างหน้าสุด เพื่อให้ File Manager แก้ไขไฟล์ได้แน่นอน
     command: >
-      sh -c "apt-get update && apt-get install -y ssmtp &&
-      sh -c "chmod -R 777 /var/www/html &&
+      sh -c "chmod -R 777 /var/www/html && 
       apt-get update && apt-get install -y ssmtp &&
       echo 'root=impactculinova@gmail.com' > /etc/ssmtp/ssmtp.conf &&
       echo 'mailhub=smtp.gmail.com:587' >> /etc/ssmtp/ssmtp.conf &&
       echo 'AuthUser=impactculinova@gmail.com' >> /etc/ssmtp/ssmtp.conf &&
       echo 'AuthPass=dltqosflsstoprhc' >> /etc/ssmtp/ssmtp.conf &&
       echo 'UseSTARTTLS=YES' >> /etc/ssmtp/ssmtp.conf &&
+      echo 'FromLineOverride=YES' >> /etc/ssmtp/ssmtp.conf &&
       echo 'sendmail_path = /usr/sbin/ssmtp -t' > /usr/local/etc/php/conf.d/mail.ini &&
       echo 'ServerName localhost' >> /etc/apache2/apache2.conf &&
       docker-php-ext-install pdo pdo_mysql &&
       apache2-foreground"
     networks:
       - event-net
-
   # 4. ตัวจัดการไฟล์ (รันปกติที่ 8099)
   filemanager:
     image: filebrowser/filebrowser:latest

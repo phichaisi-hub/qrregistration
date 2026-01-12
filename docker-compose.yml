@@ -63,12 +63,13 @@ services:
     restart: always
     working_dir: /app
     ports:
-      - "3001:3000" # ฝั่งเครื่องนอกใช้ 3001, ใน Container ยังเป็น 3000
+      - "3001:3000"
     volumes:
       - ./scanner-app:/app
     depends_on:
       - db
-    command: sh -c "npm install && node index.js"
+    # สั่งให้ npm install ก่อนรันเสมอเพื่อป้องกันกรณีขาด Library
+    command: sh -c "npm install && npm start"
     networks:
       - event-net
 

@@ -1,97 +1,80 @@
 <?php
-/**
- * ระบบลงทะเบียนและส่ง QR Code ผ่านฟังก์ชัน mail()
- * ตรวจสอบให้แน่ใจว่าได้ตั้งค่า sSMTP ใน Docker Compose แล้ว
- */
+// 1. โหลด PHPMailer แบบ Manual
+require 'PHPMailer/Exception.php';
+require 'PHPMailer/PHPMailer.php';
+require 'PHPMailer/SMTP.php';
 
-// 1. เชื่อมต่อฐานข้อมูล MariaDB
-$host = 'db'; 
-$db   = 'event_db'; 
-$user = 'root'; 
-$pass = 'rootpassword';
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
 
+// 2. เชื่อมต่อ DB (MariaDB)
+$host = 'db'; $db = 'event_db'; $user = 'root'; $pass = 'rootpassword';
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
     ]);
-} catch (Exception $e) {
-    die("❌ DB Connection Error: " . $e->getMessage());
-}
+} catch (Exception $e) { die("DB Connection Error: " . $e->getMessage()); }
 
 $message = "";
 
-// 2. ประมวลผลเมื่อมีการ POST ข้อมูล
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // สร้างเลขรหัสลงทะเบียน REG-YYMMDD-XXXX
     $reg_id = 'REG-' . date('ymd') . '-' . strtoupper(substr(uniqid(), -4));
     
     try {
-        // บันทึกข้อมูลลงฐานข้อมูล
-        $sql = "INSERT INTO registrations (registration_id, company_name, event_name, booth_number, purpose, entry_date, ticket_count, contact_name, email, phone) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // บันทึกข้อมูลลง Database
+        $sql = "INSERT INTO registrations (registration_id, company_name, event_name, booth_number, purpose, entry_date, ticket_count, contact_name, email, phone) VALUES (?,?,?,?,?,?,?,?,?,?)";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            $reg_id, 
-            $_POST['company_name'], 
-            $_POST['event_name'], 
-            $_POST['booth_number'], 
-            $_POST['purpose'], 
-            $_POST['entry_date'], 
-            $_POST['ticket_count'], 
-            $_POST['contact_name'], 
-            $_POST['email'], 
-            $_POST['phone']
+            $reg_id, $_POST['company_name'], $_POST['event_name'], $_POST['booth_number'], 
+            $_POST['purpose'], $_POST['entry_date'], $_POST['ticket_count'], 
+            $_POST['contact_name'], $_POST['email'], $_POST['phone']
         ]);
 
-        // 📨 เตรียมส่งอีเมลด้วยฟังก์ชัน mail()
-        $to = $_POST['email'];
-        // เข้ารหัสหัวข้ออีเมลเพื่อรองรับภาษาไทย
-        $subject = "=?UTF-8?B?".base64_encode("QR Code สำหรับเข้างานของคุณ: " . $_POST['event_name'])."?=";
-        
-        // ใช้ QuickChart API สร้าง QR Code
-        $qr_url = "https://quickchart.io/qr?text=" . urlencode($reg_id) . "&size=250";
+        // 📨 ส่งอีเมลด้วย PHPMailer (เนื่องจาก mail() ใน Docker รันไม่ได้)
+        $mail = new PHPMailer(true);
+        try {
+            $mail->isSMTP();
+            $mail->Host       = 'mailhb.impact.co.th';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'phichais@impact.co.th';
+            $mail->Password   = 'Gano.2466'; 
+            $mail->SMTPSecure = ''; 
+            $mail->Port       = 25;
+            $mail->CharSet    = 'UTF-8';
 
-        // กำหนด Headers สำหรับอีเมล HTML
-        $headers = "MIME-Version: 1.0" . "\r\n";
-        $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-        $headers .= "From: Event Admin <impactculinova@gmail.com>" . "\r\n";
-        $headers .= "Reply-To: impactculinova@gmail.com" . "\r\n";
+            // ตั้งค่า SSL เพื่อหลีกเลี่ยงปัญหาใน Docker
+            $mail->SMTPOptions = array(
+                'ssl' => array(
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                )
+            );
 
-        // เนื้อหาอีเมล
-        $body = "
-        <html>
-        <body style='font-family: Tahoma, sans-serif; line-height: 1.6; color: #333;'>
-            <div style='max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;'>
-                <h2 style='color: #007bff; text-align: center;'>ลงทะเบียนสำเร็จ!</h2>
-                <p>เรียนคุณ <strong>{$_POST['contact_name']}</strong>,</p>
-                <p>ขอบคุณสำหรับการลงทะเบียนเข้าปฏิบัติงาน ข้อมูลของคุณได้รับการบันทึกเรียบร้อยแล้ว:</p>
-                <ul style='list-style: none; padding: 0;'>
-                    <li><strong>ชื่องาน:</strong> {$_POST['event_name']}</li>
-                    <li><strong>บริษัท:</strong> {$_POST['company_name']}</li>
-                    <li><strong>หมายเลขบูธ:</strong> {$_POST['booth_number']}</li>
-                    <li><strong>รหัสลงทะเบียน:</strong> <span style='background: #f8f9fa; padding: 2px 8px; border: 1px solid #ddd;'>$reg_id</span></li>
-                </ul>
-                <div style='text-align: center; margin: 30px 0;'>
-                    <p><strong>QR Code สำหรับสแกนเข้างาน</strong></p>
-                    <img src='$qr_url' alt='QR Code' style='border: 2px solid #007bff; padding: 10px; border-radius: 5px;'>
-                    <p style='font-size: 12px; color: #dc3545;'>*กรุณาเซฟรูปภาพนี้เพื่อแสดงต่อเจ้าหน้าที่หน้างาน</p>
-                </div>
-                <hr style='border: 0; border-top: 1px solid #eee;'>
-                <p style='font-size: 11px; color: #999; text-align: center;'>นี่คืออีเมลอัตโนมัติ กรุณาอย่าตอบกลับ</p>
-            </div>
-        </body>
-        </html>";
+            $mail->setFrom('phichais@impact.co.th', 'Event Admin');
+            $mail->addAddress($_POST['email']);
 
-        // ส่งเมล
-        if (mail($to, $subject, $body, $headers)) {
-            $message = "<div class='alert alert-success shadow-sm'>✅ ลงทะเบียนสำเร็จ! และส่ง QR Code ไปที่ {$_POST['email']} เรียบร้อยแล้ว</div>";
-        } else {
-            $message = "<div class='alert alert-warning shadow-sm'>⚠️ บันทึกข้อมูลสำเร็จ แต่ระบบส่งอีเมลขัดข้อง (โปรดตรวจสอบการตั้งค่า SMTP ใน Docker)</div>";
+            $qr_url = "https://quickchart.io/qr?text=" . urlencode($reg_id) . "&size=250";
+            $mail->isHTML(true);
+            $mail->Subject = "=?UTF-8?B?".base64_encode("QR Code สำหรับเข้างานของคุณ")."?=";
+            $mail->Body    = "
+                <div style='font-family: sans-serif; border: 1px solid #ddd; padding: 20px; border-radius: 10px;'>
+                    <h3 style='color: #007bff;'>ลงทะเบียนสำเร็จ!</h3>
+                    <p>เรียนคุณ <b>{$_POST['contact_name']}</b></p>
+                    <p>รหัสลงทะเบียน: <b>$reg_id</b></p>
+                    <div style='text-align: center; margin-top: 20px;'>
+                        <img src='$qr_url' alt='QR Code'>
+                    </div>
+                </div>";
+
+            $mail->send();
+            $message = "<div class='alert alert-success'>✅ ลงทะเบียนและส่ง QR Code สำเร็จ!</div>";
+        } catch (Exception $e) { 
+            $message = "<div class='alert alert-warning'>⚠️ บันทึกข้อมูลสำเร็จ แต่ส่งอีเมลไม่ได้: {$mail->ErrorInfo}</div>";
         }
 
-    } catch (Exception $e) {
-        $message = "<div class='alert alert-danger shadow-sm'>❌ ข้อผิดพลาด: " . $e->getMessage() . "</div>";
+    } catch (Exception $e) { 
+        $message = "<div class='alert alert-danger'>❌ Error: " . $e->getMessage() . "</div>"; 
     }
 }
 ?>

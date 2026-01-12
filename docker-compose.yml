@@ -51,6 +51,7 @@ services:
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
+    user: "0:0"  # 🟢 เพิ่มบรรทัดนี้ เพื่อให้รันด้วยสิทธิ์ Root จะได้ Rename ไฟล์ได้ทุกไฟล์
     restart: always
     ports:
       - "8099:80"

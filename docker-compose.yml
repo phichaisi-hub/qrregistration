@@ -51,8 +51,8 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-      - ./filebrowser.db:/database.db
-    command: ["--root", "/srv", "--noauth", "--database", "/database.db"]
+      # ลบบรรทัดที่เชื่อมต่อกับ ./filebrowser.db ออกไปก่อน
+    command: ["--root", "/srv", "--noauth", "--database", "/tmp/filebrowser.db"]
     networks:
       - event-net
 

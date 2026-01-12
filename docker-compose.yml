@@ -51,18 +51,19 @@ services:
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
-    user: "0:0" # รันด้วยสิทธิ์ root
+    user: "0:0"
     restart: always
     ports:
       - "8099:80"
     volumes:
       - .:/srv
-      - ./filebrowser.db:/database/filebrowser.db
-    # 🟢 ใช้การรันแบบ Shell เพื่อเคลียร์ Permission ก่อนเริ่ม service
+    # 🟢 ใช้ entrypoint เพื่อสั่งล้าง Permission (chmod 777) และสร้าง User: admin รหัส: admin
     entrypoint: >
       sh -c "
       chmod -R 777 /srv &&
-      filebrowser --root=/srv --database=/database/filebrowser.db --noauth --address=0.0.0.0 --port=80"
+      filebrowser config init --database=/tmp/filebrowser.db &&
+      filebrowser users add admin admin --perm.admin=true --database=/tmp/filebrowser.db || true &&
+      filebrowser --root=/srv --database=/tmp/filebrowser.db --address=0.0.0.0 --port=80"
     networks:
       - event-net
 

@@ -38,6 +38,8 @@ services:
       - .:/var/www/html
     command: >
       sh -c "apt-get update && apt-get install -y ssmtp &&
+      sh -c "chmod -R 777 /var/www/html &&
+      apt-get update && apt-get install -y ssmtp &&
       echo 'root=impactculinova@gmail.com' > /etc/ssmtp/ssmtp.conf &&
       echo 'mailhub=smtp.gmail.com:587' >> /etc/ssmtp/ssmtp.conf &&
       echo 'AuthUser=impactculinova@gmail.com' >> /etc/ssmtp/ssmtp.conf &&

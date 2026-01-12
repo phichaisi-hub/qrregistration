@@ -57,6 +57,9 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
+      # 🟢 สร้างไฟล์ db ไว้ในโฟลเดอร์งานเพื่อให้ค่า Setting ไม่หายเวลา Restart
+      - ./filebrowser.db:/database/filebrowser.db
+      - ./settings.json:/config/settings.json
     command: ["--root", "/srv", "--noauth", "--database", "/tmp/filebrowser.db"]
     networks:
       - event-net

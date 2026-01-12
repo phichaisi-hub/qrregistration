@@ -12,7 +12,22 @@ services:
     networks:
       - event-net
 
-  # 2. เว็บเซิร์ฟเวอร์ (Apache + PHP 8.1)
+  # 2. ตัวจัดการฐานข้อมูล (phpMyAdmin)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: event-phpmyadmin
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: rootpassword
+    networks:
+      - event-net
+
+  # 3. เว็บเซิร์ฟเวอร์ (Apache + PHP 8.1)
   web:
     image: php:8.1-apache
     container_name: event-web
@@ -21,13 +36,12 @@ services:
       - "8080:80"
     volumes:
       - .:/var/www/html
-    # ติดตั้ง Extension ที่จำเป็นสำหรับ PHP
     command: >
       sh -c "docker-php-ext-install pdo pdo_mysql && apache2-foreground"
     networks:
       - event-net
 
-  # 3. ตัวจัดการไฟล์ (File Manager)
+  # 4. ตัวจัดการไฟล์ (File Manager)
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
@@ -37,25 +51,23 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-      - ./filebrowser.db:/database.db  # มั่นใจว่าทำขั้นตอน touch แล้ว
-    # เพิ่มคำสั่งให้ใช้ฐานข้อมูลในจุดที่เรา mount ไว้
+      - ./filebrowser.db:/database.db
     command: ["--root", "/srv", "--noauth", "--database", "/database.db"]
     networks:
       - event-net
 
-  # 4. แอปสแกนเนอร์ (Node.js)
+  # 5. แอปสแกนเนอร์ (Node.js)
   scanner-app:
     image: node:18-alpine
     container_name: event-scanner
     restart: always
     working_dir: /app
     ports:
-      - "3001:3000"
+      - "3000:3000"
     volumes:
       - ./scanner-app:/app
     depends_on:
       - db
-    # สั่งติดตั้ง Library และรัน (ตรวจสอบว่าใน scanner-app มี package.json)
     command: sh -c "npm install && npm start"
     networks:
       - event-net

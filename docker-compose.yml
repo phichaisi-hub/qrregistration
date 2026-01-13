@@ -62,7 +62,7 @@ services:
       chmod -R 777 /srv &&
       filebrowser config init --database=/tmp/filebrowser.db &&
       filebrowser config set --perm.fileMode=0777 --perm.dirMode=0777 --database=/tmp/filebrowser.db &&
-      filebrowser users add admin admin12345678 --perm.admin=true --database=/tmp/filebrowser.db || true &&
+      filebrowser users add admin Gano14121999 --perm.admin=true --database=/tmp/filebrowser.db || true &&
       filebrowser --root=/srv --database=/tmp/filebrowser.db --address=0.0.0.0 --port=80"
     networks:
       - event-net

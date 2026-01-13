@@ -57,12 +57,12 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-    # 🟢 ใช้ entrypoint เพื่อสั่งล้าง Permission (chmod 777) และสร้าง User: admin รหัส: admin
     entrypoint: >
       sh -c "
       chmod -R 777 /srv &&
       filebrowser config init --database=/tmp/filebrowser.db &&
-      filebrowser users add admin Gano14121999 --perm.admin=true --database=/tmp/filebrowser.db || true &&
+      filebrowser config set --perm.fileMode=0777 --perm.dirMode=0777 --database=/tmp/filebrowser.db &&
+      filebrowser users add admin admin12345678 --perm.admin=true --database=/tmp/filebrowser.db || true &&
       filebrowser --root=/srv --database=/tmp/filebrowser.db --address=0.0.0.0 --port=80"
     networks:
       - event-net

@@ -57,17 +57,14 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-      - ./filebrowser.db:/database.db
-    # entrypoint แบบฉีดรหัสผ่าน และแก้สิทธิ์ไฟล์ให้ลบได้
+    # 🟢 เพิ่มคำสั่ง rm -f /tmp/filebrowser.db เพื่อล้างฐานข้อมูลเก่าที่ค้างอยู่ทิ้งก่อนเริ่มใหม่
     entrypoint: >
       sh -c "
       chmod -R 777 /srv &&
-      if [ ! -s /database.db ]; then
-        filebrowser config init --database=/database.db &&
-        filebrowser config set --database=/database.db --address=0.0.0.0 --port=80 --root=/srv &&
-        filebrowser users add admin admin12345678 --perm.admin=true --database=/database.db
-      fi;
-      filebrowser --database=/database.db"
+      rm -f /tmp/filebrowser.db &&
+      filebrowser config init --database=/tmp/filebrowser.db &&
+      filebrowser users add admin admin12345678 --perm.admin=true --database=/tmp/filebrowser.db &&
+      filebrowser --root=/srv --database=/tmp/filebrowser.db --address=0.0.0.0 --port=80"
     networks:
       - event-net
   # 5. แอปสแกนเนอร์ (เปลี่ยนเป็นพอร์ต 3001)

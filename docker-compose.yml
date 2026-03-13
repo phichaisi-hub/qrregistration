@@ -57,10 +57,12 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-      - ./filebrowser.db:/database.db  # <--- สำคัญมาก: เก็บไว้ที่เครื่อง Host ข้อมูลจะไม่หาย
+      - ./filebrowser.db:/database.db
+    # entrypoint แบบฉีดรหัสผ่าน และแก้สิทธิ์ไฟล์ให้ลบได้
     entrypoint: >
       sh -c "
-      if [ ! -f /database.db ]; then
+      chmod -R 777 /srv &&
+      if [ ! -s /database.db ]; then
         filebrowser config init --database=/database.db &&
         filebrowser config set --database=/database.db --address=0.0.0.0 --port=80 --root=/srv &&
         filebrowser users add admin admin12345678 --perm.admin=true --database=/database.db
@@ -68,7 +70,6 @@ services:
       filebrowser --database=/database.db"
     networks:
       - event-net
-
   # 5. แอปสแกนเนอร์ (เปลี่ยนเป็นพอร์ต 3001)
   scanner-app:
     image: node:18-alpine

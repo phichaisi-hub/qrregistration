@@ -47,14 +47,14 @@ services:
     networks:
       - event-net
       
-  # 4. ตัวจัดการไฟล์ (รันปกติที่ 8099)
+  # 4. ตัวจัดการไฟล์ (รันปกติที่ 8098)
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
     user: "0:0" # รันในฐานะ root
     restart: always
     ports:
-      - "8099:80"
+      - "8098:80"
     volumes:
       - .:/srv
       # สร้างไฟล์เปล่าๆ ชื่อ filebrowser.db ไว้ที่เดียวกับ docker-compose.yml ก่อนรัน

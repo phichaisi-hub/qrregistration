@@ -51,22 +51,25 @@ services:
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
-    user: "0:0"
+    user: "0:0" # รันในฐานะ root
     restart: always
     ports:
       - "8099:80"
     volumes:
       - .:/srv
-    # 🟢 เพิ่มคำสั่ง rm -f /tmp/filebrowser.db เพื่อล้างฐานข้อมูลเก่าที่ค้างอยู่ทิ้งก่อนเริ่มใหม่
+      # สร้างไฟล์เปล่าๆ ชื่อ filebrowser.db ไว้ที่เดียวกับ docker-compose.yml ก่อนรัน
+      - ./filebrowser.db:/database.db 
     entrypoint: >
       sh -c "
       chmod -R 777 /srv &&
-      rm -f /tmp/filebrowser.db &&
-      filebrowser config init --database=/tmp/filebrowser.db &&
-      filebrowser users add admin admin12345678 --perm.admin=true --database=/tmp/filebrowser.db &&
-      filebrowser --root=/srv --database=/tmp/filebrowser.db --address=0.0.0.0 --port=80"
+      if [ ! -f /database.db ]; then
+        filebrowser config init --database=/database.db
+        filebrowser users add admin admin12345678 --perm.admin=true --database=/database.db
+      fi &&
+      filebrowser --root=/srv --database=/database.db --address=0.0.0.0 --port=80"
     networks:
       - event-net
+
 
   # 5. แอปสแกนเนอร์ (เปลี่ยนเป็นพอร์ต 3001)
   scanner-app:

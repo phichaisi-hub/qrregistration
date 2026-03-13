@@ -47,29 +47,27 @@ services:
     networks:
       - event-net
       
-  # 4. ตัวจัดการไฟล์ (รันปกติที่ 8098)
+  # 4. ตัวจัดการไฟล์ (รันปกติที่ 8099)
   filemanager:
     image: filebrowser/filebrowser:latest
     container_name: event-filemanager
-    user: "0:0" # รันในฐานะ root
+    user: "0:0"
     restart: always
     ports:
-      - "8098:80"
+      - "8099:80"
     volumes:
       - .:/srv
-      # สร้างไฟล์เปล่าๆ ชื่อ filebrowser.db ไว้ที่เดียวกับ docker-compose.yml ก่อนรัน
-      - ./filebrowser.db:/database.db 
+      - ./filebrowser.db:/database.db  # <--- สำคัญมาก: เก็บไว้ที่เครื่อง Host ข้อมูลจะไม่หาย
     entrypoint: >
       sh -c "
-      chmod -R 777 /srv &&
       if [ ! -f /database.db ]; then
-        filebrowser config init --database=/database.db
+        filebrowser config init --database=/database.db &&
+        filebrowser config set --database=/database.db --address=0.0.0.0 --port=80 --root=/srv &&
         filebrowser users add admin admin12345678 --perm.admin=true --database=/database.db
-      fi &&
-      filebrowser --root=/srv --database=/database.db --address=0.0.0.0 --port=80"
+      fi;
+      filebrowser --database=/database.db"
     networks:
       - event-net
-
 
   # 5. แอปสแกนเนอร์ (เปลี่ยนเป็นพอร์ต 3001)
   scanner-app:

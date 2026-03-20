@@ -57,10 +57,13 @@ services:
       - "8099:80"
     volumes:
       - .:/srv
-    # 🟢 เพิ่มคำสั่ง rm -f /tmp/filebrowser.db เพื่อล้างฐานข้อมูลเก่าที่ค้างอยู่ทิ้งก่อนเริ่มใหม่
     entrypoint: >
       sh -c "
-      chmod -R 777 /srv &&
+      # 1. บังคับให้ไฟล์และโฟลเดอร์ทั้งหมดในโปรเจกต์ (./) เป็นสิทธิ์ที่ PHP อ่านได้
+      chmod -R 755 /srv && 
+      find /srv -type f -exec chmod 644 {} \; &&
+      
+      # 2. จัดการ Database ของ Filebrowser ตามปกติ
       rm -f /tmp/filebrowser.db &&
       filebrowser config init --database=/tmp/filebrowser.db &&
       filebrowser users add admin admin12345678 --perm.admin=true --database=/tmp/filebrowser.db &&
